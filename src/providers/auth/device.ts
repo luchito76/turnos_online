@@ -1,6 +1,8 @@
-import { Injectable } from '@angular/core';
-import { NavController } from '@ionic/angular';
+import { Router } from '@angular/router';
+import { Injectable, NgZone } from '@angular/core';
+import { AlertController, NavController } from '@ionic/angular';
 import { Device } from '@ionic-native/device/ngx';
+import { FirebaseMessaging } from '@ionic-native/firebase-messaging/ngx';
 import { Storage } from '@ionic/storage';
 import { Observable } from 'rxjs';
 
@@ -8,8 +10,6 @@ import { Observable } from 'rxjs';
 import { NetworkProvider } from './../network';
 
 import { ENV } from '@app/env';
-import { CampaniaDetallePage } from 'src/app/pages/datos-utiles/campanias/detalle/campania-detalle';
-import { RupAdjuntarPage } from 'src/app/pages/profesional/rup-adjuntar/rup-adjuntar';
 
 
 @Injectable()
@@ -23,9 +23,14 @@ export class DeviceProvider {
     public notification: Observable<any>;
 
     constructor(
+        private ngZone: NgZone,
         public device: Device,
         public storage: Storage,
-        public network: NetworkProvider) {
+        private alertCtrl: AlertController,
+        public network: NetworkProvider,
+        private fcm: FirebaseMessaging,
+        private router: Router
+    ) {
 
         this.storage.get('current_device').then((currentDevice) => {
             if (currentDevice) {
@@ -39,51 +44,113 @@ export class DeviceProvider {
      * Register in push notifications server
      */
     init() {
-        this.notification = new Observable(observer => {
-            if ((window as any).PushNotification) {
-                const push = (window as any).PushNotification.init({
-                    android: {
-                    },
-                    ios: {
-                        alert: 'true',
-                        badge: true,
-                        sound: 'false'
-                    },
-                    windows: {}
+
+        this.fcm.requestPermission().then(hasPermission => {
+            if (hasPermission) {
+
+                // Token necesario para envío de push notifications
+                this.fcm.getToken().then(token => {
+                    console.log(token);
+                    this.onRegister(token);
                 });
-                push.on('registration', (data) => this.onRegister(data));
-                push.on('notification', (data) => this.onNotification(data, observer));
-                push.on('error', (data) => this.onError(data));
+
+                // Captura cualquier mensaje en foreground (app en foco)
+                this.fcm.onMessage().subscribe(data => {
+                    if (data.wasTapped) {
+                        // Recibido en background: no hacemos nada (ver onBackgroundMessage abajo)
+                    } else {
+                        // Recibido en foreground
+                        this.ngZone.run(() => {
+                            this.onNotification('fg', JSON.parse(data.extraData));
+                        });
+                    }
+                });
+
+                // Captura mensaje en background (app fuera de foco)
+                this.fcm.onBackgroundMessage().subscribe(data => {
+                    this.ngZone.run(() => {
+                        this.onNotification('bg', JSON.parse(data.extraData));
+                    });
+                });
+
+                // Si se detecta un nuevo token
+                this.fcm.onTokenRefresh().subscribe(token => {
+                    this.onRegister(token);
+                });
+
             }
+
         });
     }
-
     /**
      * Persist the registration ID
-     * @param data Objeto
+     * @param data String token
      */
     onRegister(data: any) {
-        this.registrationId = data.registrationId;
+        this.registrationId = data;
     }
 
     /**
      * Call when notification arrive
+     * @param origin foreground (fg) o background (bg)
      * @param data Notificación
+     * foreground: la notificación llega cuando la app está en foco (NO muestra push notification)
+     * background: la notificación llega cuando la app está fuera de foco (SI muestra push notification, se activa al tocarla)
      */
-    onNotification(data: any, observer: any) {
-        if (data.additionalData.action === 'rup-adjuntar') {
-            observer.next({
-                component: RupAdjuntarPage,
-                extras: { id: data.additionalData.id }
-            });
+    onNotification(origin: 'fg' | 'bg', data: any) {
+        if (data.action === 'rup-adjuntar') {
+            if (origin === 'bg') {
+                this.router.navigate(['profesional/consultorio'], { queryParams: { id: data.id } });
+            } else if (origin === 'fg') {
+                data = {
+                    ...data,
+                    ...{
+                        header: 'Consulta RUP',
+                        subHeaader: 'Adjuntar documento',
+                        message: 'Se detectó un pedido para adjuntar un documento desde Andes.',
+                        btnText: 'Ir a RUP'
+                    }
+                };
+                this.ngZone.run(async () => {
+                    const datos: any = await this.prompt(data);
+                    if (datos) {
+                        this.router.navigate(['profesional/consultorio'], { queryParams: { id: datos.id } });
+                    }
+                });
+            }
         }
-        if (data.additionalData.action === 'campaniaSalud') {
-            observer.next({
-                component: CampaniaDetallePage,
-                extras: { campania: data.additionalData.campania }
-            });
+        if (data.action === 'campaniaSalud') {
         }
 
+    }
+
+    async prompt(datos) {
+        const alert = await this.alertCtrl.create({
+            header: datos.header,
+            subHeader: datos.subHeader,
+            message: datos.message || '',
+            buttons: [
+                {
+                    text: 'Cancelar',
+                    role: 'cancelado',
+                    cssClass: 'secondary',
+                    handler: (cancel) => {
+                        return true;
+                    }
+                }, {
+                    text: datos.btnText,
+                    role: 'aceptado',
+                    handler: () => {
+                        return true;
+                    }
+                }
+            ]
+        });
+        await alert.present();
+        const { role } = await alert.onDidDismiss();
+        if (role === 'aceptado') {
+            return datos;
+        }
     }
 
     /**
@@ -168,5 +235,7 @@ export class DeviceProvider {
             }
         }
     }
+
+
 
 }

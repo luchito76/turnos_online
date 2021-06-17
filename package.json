@@ -71,6 +71,7 @@
     "@ionic-native/file-opener": "^5.33.1",
     "@ionic-native/file-path": "^5.29.0",
     "@ionic-native/file-transfer": "^5.33.1",
+    "@ionic-native/firebase-messaging": "^5.33.1",
     "@ionic-native/geolocation": "^5.29.0",
     "@ionic-native/google-maps": "^5.5.0",
     "@ionic-native/image-resizer": "^5.29.0",
@@ -112,6 +113,7 @@
     "com-badrit-base64": "^0.2.0",
     "com.darktalker.cordova.screenshot": "^0.1.6",
     "cordova-android": "^9.1.0",
+    "cordova-common": "^4.0.2",
     "cordova-plugin-androidx": "^3.0.0",
     "cordova-plugin-androidx-adapter": "^1.1.3",
     "cordova-plugin-camera": "^5.0.1",
@@ -121,6 +123,8 @@
     "cordova-plugin-file-opener": "^1.0.0",
     "cordova-plugin-file-opener2": "^3.0.5",
     "cordova-plugin-file-transfer": "^1.7.1",
+    "cordova-plugin-firebase-analytics": "^5.0.0",
+    "cordova-plugin-firebase-messaging": "^5.0.1",
     "cordova-plugin-geolocation": "^4.1.0",
     "cordova-plugin-ionic-keyboard": "^2.2.0",
     "cordova-plugin-ionic-webview": "^4.2.1",
@@ -129,6 +133,8 @@
     "cordova-plugin-whitelist": "^1.3.4",
     "cordova-res": "^0.15.2",
     "cordova-sqlite-storage": "^5.1.0",
+    "cordova-support-android-plugin": "^1.0.2",
+    "cordova-support-google-services": "^1.4.1",
     "jasmine-core": "~3.5.0",
     "jasmine-spec-reporter": "~5.0.0",
     "json": "^10.0.0",
@@ -138,7 +144,10 @@
     "karma-jasmine": "~3.3.0",
     "karma-jasmine-html-reporter": "^1.5.0",
     "phonegap-plugin-barcodescanner": "^8.1.0",
+    "phonegap-plugin-multidex": "^1.0.0",
+    "properties-parser": "^0.3.1",
     "protractor": "~7.0.0",
+    "strip-final-newline": "^3.0.0",
     "ts-node": "~8.3.0",
     "tslint": "~6.1.0",
     "typescript": "~3.9.5"
@@ -167,7 +176,6 @@
       "cordova.plugins.diagnostic": {
         "ANDROIDX_VERSION": "1.+"
       },
-      "cordova-support-google-services": {},
       "cordova-plugin-email-composer": {
         "ANDROID_SUPPORT_V4_VERSION": "27.+"
       },
@@ -175,6 +183,10 @@
       "cordova-plugin-file-transfer": {},
       "cordova-plugin-file-opener2": {
         "ANDROID_SUPPORT_V4_VERSION": "27.+"
+      },
+      "cordova-plugin-firebase-messaging": {
+        "ANDROID_FIREBASE_MESSAGING_VERSION": "21.0.+",
+        "ANDROIDX_CORE_VERSION": "1.3.+"
       }
     },
     "platforms": [

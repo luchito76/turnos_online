@@ -45,6 +45,7 @@ import { TextFilterPipe } from 'src/pipes/textFilter.pipe';
 import { HttpModule } from '@angular/http';
 import { DescargaArchivosProvider } from 'src/providers/descarga-archivos';
 import { FileTransfer } from '@ionic-native/file-transfer/ngx';
+import { FirebaseMessaging } from '@ionic-native/firebase-messaging/ngx';
 
 registerLocaleData(localeSpanish, 'es');
 moment.locale('es');
@@ -100,6 +101,7 @@ moment.locale('es');
         PhotoViewer,
         DescargaArchivosProvider,
         FileTransfer,
+        FirebaseMessaging,
         { provide: LOCALE_ID, useValue: 'es' },
     ],
     bootstrap: [AppComponent],
