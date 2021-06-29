@@ -46,7 +46,6 @@ import { HttpModule } from '@angular/http';
 import { DescargaArchivosProvider } from 'src/providers/descarga-archivos';
 import { FileTransfer } from '@ionic-native/file-transfer/ngx';
 import { FirebaseMessaging } from '@ionic-native/firebase-messaging/ngx';
-import { UniqueDeviceID } from '@ionic-native/unique-device-id/ngx';
 
 registerLocaleData(localeSpanish, 'es');
 moment.locale('es');
@@ -103,7 +102,6 @@ moment.locale('es');
         DescargaArchivosProvider,
         FileTransfer,
         FirebaseMessaging,
-        UniqueDeviceID,
         { provide: LOCALE_ID, useValue: 'es' },
     ],
     bootstrap: [AppComponent],
