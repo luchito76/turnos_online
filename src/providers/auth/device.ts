@@ -3,6 +3,7 @@ import { Injectable, NgZone } from '@angular/core';
 import { AlertController, NavController } from '@ionic/angular';
 import { Device } from '@ionic-native/device/ngx';
 import { FirebaseMessaging } from '@ionic-native/firebase-messaging/ngx';
+import { UniqueDeviceID } from '@ionic-native/unique-device-id/ngx';
 import { Storage } from '@ionic/storage';
 import { Observable } from 'rxjs';
 
@@ -16,6 +17,7 @@ import { ENV } from '@app/env';
 export class DeviceProvider {
     public currentDevice: any;
     public registrationId: string = null;
+    public fcmToken: string = null;
     public navCtrl: NavController;
     private baseUrl = 'modules/mobileApp';
 
@@ -29,6 +31,7 @@ export class DeviceProvider {
         private alertCtrl: AlertController,
         public network: NetworkProvider,
         private fcm: FirebaseMessaging,
+        private uniqueDeviceID: UniqueDeviceID,
         private router: Router
     ) {
 
@@ -45,13 +48,20 @@ export class DeviceProvider {
      */
     init() {
 
+        this.uniqueDeviceID.get()
+            .then((uuid: any) => {
+                console.log(uuid);
+                this.onRegisterDevice(uuid);
+            })
+            .catch((error: any) => console.error(error));
+
         this.fcm.requestPermission().then(hasPermission => {
             if (hasPermission) {
 
                 // Token necesario para envío de push notifications
                 this.fcm.getToken().then(token => {
                     console.log(token);
-                    this.onRegister(token);
+                    this.onRegisterFCM(token);
                 });
 
                 // Captura cualquier mensaje en foreground (app en foco)
@@ -75,7 +85,7 @@ export class DeviceProvider {
 
                 // Si se detecta un nuevo token
                 this.fcm.onTokenRefresh().subscribe(token => {
-                    this.onRegister(token);
+                    this.onRegisterFCM(token);
                 });
 
             }
@@ -84,10 +94,18 @@ export class DeviceProvider {
     }
     /**
      * Persist the registration ID
+     * @param data String ID
+     */
+    onRegisterDevice(uuid: string) {
+        this.registrationId = uuid;
+    }
+
+    /**
+     * Persist the FCM token
      * @param data String token
      */
-    onRegister(data: any) {
-        this.registrationId = data;
+    onRegisterFCM(data: any) {
+        this.fcmToken = data;
     }
 
     /**
@@ -120,6 +138,12 @@ export class DeviceProvider {
             }
         }
         if (data.action === 'campaniaSalud') {
+            this.ngZone.run(async () => {
+                const datos: any = await this.prompt(data);
+                if (datos) {
+                    this.router.navigate(['datos-utiles/campania-detalle'], { queryParams: { campania: datos.id } });
+                }
+            });
         }
 
     }
@@ -170,6 +194,7 @@ export class DeviceProvider {
 
             const params = {
                 device_id: this.registrationId,
+                device_fcm_token: this.fcmToken,
                 device_type: this.device.platform + ' ' + this.device.version,
                 app_version: ENV.APP_VERSION
             };
