@@ -46,8 +46,8 @@ export class RegistroUserDataPage implements OnInit {
                 password: ['', Validators.required],
                 confirmarPassword: ['', Validators.required],
             }, {
-                    validator: PasswordValidation.MatchPassword
-                }
+                validator: PasswordValidation.MatchPassword
+            }
             );
         });
     }

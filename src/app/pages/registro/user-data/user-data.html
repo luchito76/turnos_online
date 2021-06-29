@@ -15,6 +15,9 @@
                 Para finalizar la activación, es necesario que cambies la clave actual.</h4>
         </div>
     </section>
+    <ion-item>
+        <ion-label>Recordá que tu usuario es: {{ email }}</ion-label>
+    </ion-item>
     <form novalidate (ngSubmit)="onSubmit(formRegistro)" [formGroup]="formRegistro">
         <div>
             <input class="md rounded block outline" placeholder="Nueva contraseña" formControlName="password"
@@ -31,7 +34,8 @@
             <hr>
         </ion-text>
 
-        <button class="md rounded block success" type="submit" [disabled]="formRegistro.invalid || running">Actualizar e
-            ingresar</button>
+        <button class="md rounded block success" type="submit" [disabled]="formRegistro.invalid || running">
+            Actualizar e ingresar
+        </button>
     </form>
 </ion-content>

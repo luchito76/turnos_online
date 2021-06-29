@@ -6,6 +6,7 @@ import { PacienteProvider } from 'src/providers/paciente';
 import { ToastController } from '@ionic/angular';
 import { BarcodeScanner } from '@ionic-native/barcode-scanner/ngx';
 import { ScanParser } from 'src/providers/scan-parser';
+import { DeviceProvider } from 'src/providers/auth/device';
 
 @Component({
     selector: 'app-informacion-validacion',
@@ -31,7 +32,8 @@ export class InformacionValidacionPage implements OnInit {
         public toastController: ToastController,
         private pacienteProvider: PacienteProvider,
         private barcodeScanner: BarcodeScanner,
-        private scanParser: ScanParser) {
+        private scanParser: ScanParser,
+        private device: DeviceProvider) {
     }
 
     ngOnInit(): void {
@@ -46,6 +48,10 @@ export class InformacionValidacionPage implements OnInit {
             sexo: ['', Validators.compose([Validators.required])],
             recaptcha: ['', Validators.compose([Validators.required])]
         });
+        this.device.getToken().then(token => {
+            this.paciente.fcmToken = token;
+        });
+
     }
 
     trimEmail(value) {
@@ -67,6 +73,8 @@ export class InformacionValidacionPage implements OnInit {
         this.paciente.email = this.formRegistro.controls.email.value;
         this.paciente.recaptcha = this.formRegistro.controls.recaptcha.value;
         this.paciente.scan = this.scanValido;
+
+
         this.pacienteProvider.registro(this.paciente).then(async (resultado: any) => {
             if (resultado._id) {
                 this.loading = false;
@@ -76,8 +84,8 @@ export class InformacionValidacionPage implements OnInit {
                     color: 'success'
                 });
                 await toast.present();
-                this.accountNombre = `${resultado.apellido}, ${resultado.nombre}`;
-                this.showAccountInfo = true;
+                // this.accountNombre = `${resultado.apellido}, ${resultado.nombre}`;
+                // this.showAccountInfo = true;
             }
         }).catch(async (err) => {
             this.showAccountInfo = false;

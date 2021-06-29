@@ -3,7 +3,6 @@ import { Injectable, NgZone } from '@angular/core';
 import { AlertController, NavController } from '@ionic/angular';
 import { Device } from '@ionic-native/device/ngx';
 import { FirebaseMessaging } from '@ionic-native/firebase-messaging/ngx';
-import { UniqueDeviceID } from '@ionic-native/unique-device-id/ngx';
 import { Storage } from '@ionic/storage';
 import { Observable } from 'rxjs';
 
@@ -11,6 +10,8 @@ import { Observable } from 'rxjs';
 import { NetworkProvider } from './../network';
 
 import { ENV } from '@app/env';
+import { AuthProvider } from './auth';
+import { ToastProvider } from '../toast';
 
 
 @Injectable()
@@ -28,16 +29,19 @@ export class DeviceProvider {
         private ngZone: NgZone,
         public device: Device,
         public storage: Storage,
+        public authService: AuthProvider,
         private alertCtrl: AlertController,
+        private toastCtrl: ToastProvider,
         public network: NetworkProvider,
         private fcm: FirebaseMessaging,
-        private uniqueDeviceID: UniqueDeviceID,
         private router: Router
     ) {
 
         this.storage.get('current_device').then((currentDevice) => {
             if (currentDevice) {
                 this.currentDevice = currentDevice;
+            } else {
+                this.onRegisterDevice(this.device.uuid);
             }
         });
 
@@ -48,13 +52,6 @@ export class DeviceProvider {
      */
     init() {
 
-        this.uniqueDeviceID.get()
-            .then((uuid: any) => {
-                console.log(uuid);
-                this.onRegisterDevice(uuid);
-            })
-            .catch((error: any) => console.error(error));
-
         this.fcm.requestPermission().then(hasPermission => {
             if (hasPermission) {
 
@@ -62,6 +59,7 @@ export class DeviceProvider {
                 this.fcm.getToken().then(token => {
                     console.log(token);
                     this.onRegisterFCM(token);
+                    console.log(this.device.uuid);
                 });
 
                 // Captura cualquier mensaje en foreground (app en foco)
@@ -74,10 +72,14 @@ export class DeviceProvider {
                             this.onNotification('fg', JSON.parse(data.extraData));
                         });
                     }
+                    console.log('onMessage', data);
+
                 });
 
                 // Captura mensaje en background (app fuera de foco)
                 this.fcm.onBackgroundMessage().subscribe(data => {
+                    console.log('onBackgroundMessage', data);
+
                     this.ngZone.run(() => {
                         this.onNotification('bg', JSON.parse(data.extraData));
                     });
@@ -92,6 +94,13 @@ export class DeviceProvider {
 
         });
     }
+
+
+    public getToken() {
+        // Token necesario para envío de push notifications
+        return this.fcm.getToken();
+    }
+
     /**
      * Persist the registration ID
      * @param data String ID
@@ -137,12 +146,39 @@ export class DeviceProvider {
                 });
             }
         }
+
         if (data.action === 'campaniaSalud') {
             this.ngZone.run(async () => {
                 const datos: any = await this.prompt(data);
                 if (datos) {
                     this.router.navigate(['datos-utiles/campania-detalle'], { queryParams: { campania: datos.id } });
                 }
+            });
+        }
+
+        if (data.action === 'codigoVerificacion') {
+            this.ngZone.run(async () => {
+                const credentials = {
+                    email: data.userEmail,
+                    password: data.codigo
+                };
+                this.authService.login(credentials).then((result) => {
+                    this.sync();
+                    this.router.navigateByUrl('/home');
+                }, (err) => {
+                    if (err) {
+                        if (err.message === 'new_password_needed') {
+                            this.router.navigate(['registro/user-data'], {
+                                queryParams: {
+                                    email: data.userEmail,
+                                    old_password: data.codigo
+                                }
+                            });
+                        } else {
+                            this.toastCtrl.danger('Email o password incorrecto.');
+                        }
+                    }
+                });
             });
         }
 
@@ -193,7 +229,7 @@ export class DeviceProvider {
             }
 
             const params = {
-                device_id: this.registrationId,
+                device_id: this.device.uuid,
                 device_fcm_token: this.fcmToken,
                 device_type: this.device.platform + ' ' + this.device.version,
                 app_version: ENV.APP_VERSION
@@ -215,18 +251,23 @@ export class DeviceProvider {
                 return;
             }
 
-            const device = {
-                id: this.currentDevice.id,
-                device_id: this.registrationId,
-                device_type: this.device.platform + ' ' + this.device.version,
-                app_version: ENV.APP_VERSION
-            };
+            if (this.currentDevice.id) {
+                const device = {
+                    id: this.currentDevice.id,
+                    device_id: this.device.uuid,
+                    device_fcm_token: this.fcmToken,
+                    device_type: this.device.platform + ' ' + this.device.version,
+                    app_version: ENV.APP_VERSION
+                };
 
-            this.network.post(this.baseUrl + '/devices/update', { device }).then((data) => {
-                this.currentDevice = data;
-                this.storage.set('current_device', this.currentDevice);
-                return resolve(this.currentDevice);
-            }, reject);
+                this.network.post(this.baseUrl + '/devices/update', { device }).then((data) => {
+                    this.currentDevice = data;
+                    this.storage.set('current_device', this.currentDevice);
+                    return resolve(this.currentDevice);
+                }, reject);
+            } else {
+                return;
+            }
         });
     }
 
@@ -238,9 +279,7 @@ export class DeviceProvider {
             }
 
             this.network.post(this.baseUrl + '/devices/delete', { id: this.currentDevice.id }).then((data) => {
-                this.currentDevice = data;
-                this.storage.set('current_device', this.currentDevice);
-                return resolve(this.currentDevice);
+                return resolve(data);
             }, reject);
 
             this.storage.remove('current_device');

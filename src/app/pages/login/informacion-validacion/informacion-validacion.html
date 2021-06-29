@@ -106,8 +106,8 @@
                     </ion-text>
                 </div>
                 <div class="ion-justify-content-center" *ngIf="!scanValido">
-                    <re-captcha formControlName="recaptcha" siteKey="6Lc5nUsaAAAAALJ15OtJMKpdW9XSEOl13A_3Hx6i">
-                    </re-captcha>
+                    <!-- <re-captcha formControlName="recaptcha" siteKey="6Lc5nUsaAAAAALJ15OtJMKpdW9XSEOl13A_3Hx6i">
+                    </re-captcha> -->
                 </div>
                 <button class="md rounded block" [ngClass]="{'success': formRegistro.valid && !loading}" type="submit"
                         [disabled]="formRegistro.invalid || loading">
