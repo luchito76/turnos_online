@@ -15,7 +15,6 @@ import { ConnectivityService } from './providers/connectivity.service';
 import { Router } from '@angular/router';
 import { SQLite } from '@ionic-native/sqlite/ngx';
 
-
 @Component({
     selector: 'app-root',
     templateUrl: 'app.component.html'
@@ -55,11 +54,6 @@ export class AppComponent {
                 this.statusBar.overlaysWebView(false);
             }
 
-            this.deviceProvider.notification.subscribe((data) => {
-                // this.nav.push(data.component, data.extras);
-
-            });
-
             const gestion = await this.authProvider.checkGestion();
             const sesion = await this.authProvider.checkSession();
 
@@ -72,8 +66,8 @@ export class AppComponent {
                         this.deviceProvider.update().then(() => true, () => true);
                         this.rootPage = HomePage;
 
-
-                    }).catch(() => {
+                    }).catch(err => {
+                        console.error('Auth error', err);
                     });
                 } else {
                     this.authProvider.checkAuth().then((user: any) => {

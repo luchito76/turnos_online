@@ -46,8 +46,8 @@ export class RegistroUserDataPage implements OnInit {
                 password: ['', Validators.required],
                 confirmarPassword: ['', Validators.required],
             }, {
-                    validator: PasswordValidation.MatchPassword
-                }
+                validator: PasswordValidation.MatchPassword
+            }
             );
         });
     }
@@ -62,11 +62,12 @@ export class RegistroUserDataPage implements OnInit {
         }).then((result: any) => {
             this.running = false;
             this.deviceProvider.sync();
+            this.toastCtrl.success('Listo! ');
             this.router.navigate(['/home']);
         }, (err) => {
             this.running = false;
             if (err) {
-                this.toastCtrl.danger('HUBO PROBLEMAS EN LA CONEXIÓN');
+                this.toastCtrl.danger('Hubo un problema, comprobá tu conexión a Internet e intentá nuevamente.');
             }
         });
     }

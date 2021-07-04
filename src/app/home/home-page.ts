@@ -1,5 +1,4 @@
 import { Component } from '@angular/core';
-import { MenuController } from '@ionic/angular';
 import { AuthProvider } from 'src/providers/auth/auth';
 import { Storage } from '@ionic/storage';
 import { Router } from '@angular/router';
@@ -16,7 +15,6 @@ export class HomePage {
 
     constructor(
         public authService: AuthProvider,
-        private menuCtrl: MenuController,
         private reporter: ErrorReporterProvider,
         private storage: Storage,
         private router: Router,
@@ -24,7 +22,6 @@ export class HomePage {
     }
 
     ionViewDidEnter() {
-        this.menuCtrl.enable(true, 'principal');
         this.storage.get('familiar').then((value) => {
             if (value) {
                 this.familiar = true;
